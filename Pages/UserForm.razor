@@ -1,0 +1,205 @@
+@page "/userform/{userId:int?}"
+@using Form.Models
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager Navigation
+@inject Form.Data.ApplicationDbContext DbContext
+<div class="header-container">
+    <h3>@(user.Id == 0 ? "Create" : "Edit") User Details</h3>
+    <button class="btn btn-secondary">
+        <a href="/userlist" class="text-decoration-none text-white">Existing List</a>
+    </button>
+</div>
+
+<EditForm Model="@user" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary /> 
+
+    <div class="form-container">
+        <!-- Full Name (String) -->
+        <div class="form-group">
+            <label>Full Name:</label>
+            <InputText @bind-Value="user.FullName" class="form-control" />
+        </div> 
+
+        <!-- Age (Integer) -->
+        <div class="form-group">
+            <label>Age:</label>
+            <InputNumber @bind-Value="user.Age" class="form-control" />
+        </div>
+
+        <!-- Gender (Radio Buttons) -->
+        <div class="form-group">
+            <label>Gender:</label>
+            <InputRadioGroup @bind-Value="user.Gender" class="radio-group">
+                <div class="radio-container">
+                    <InputRadio Value="Gender.Male" /> <label>Male</label>
+                    <InputRadio Value="Gender.Female" /> <label>Female</label>
+                    <InputRadio Value="Gender.Other" /> <label>Other</label>
+                </div>
+                <label>Selected Gender; @user.Gender</label>
+            </InputRadioGroup> 
+        </div>
+        
+        <!-- Country (Dropdown) -->
+        <div class="form-group">
+            <label>Country:</label>
+            <InputSelect @bind-Value="user.Country" class="form-control">
+                <option value="">-- Select a country --</option>
+                <option value="USA">USA</option>
+                <option value="India">India</option>
+                <option value="UK">UK</option>
+                <option value="Canada">Canada</option>
+            </InputSelect>
+        </div>
+        
+        <!-- Wants Stereo (Checkbox) -->
+        <div class="form-group">
+            <label>Options:</label>
+            <div class="checkbox-container">
+                <InputCheckbox @bind-Value="user.WantsStereo" /> <label>Wants Stereo</label>
+                <InputCheckbox @bind-Value="user.IsSubscribed" /> <label>Subscribe to Newsletter</label>
+            </div>
+        </div>
+
+        <!-- Preferred Time (Radio Buttons) -->
+        <div class="form-group">
+            <label>Preferred Time for Service:</label>
+            <InputRadioGroup @bind-Value="user.PreferredTime" class="radio-group">
+                <div class="radio-container">
+                    <InputRadio Value="PreferredTime.Morning" /> <label>Morning</label>
+                    <InputRadio Value="PreferredTime.Afternoon" /> <label>Afternoon</label>
+                    <InputRadio Value="PreferredTime.Evening" /> <label>Evening</label>
+                </div>
+            </InputRadioGroup>
+        </div>
+        
+        <!-- Rating (Slider) -->
+        <div class="form-group">
+            <label>Rate our Service (1-10):</label>
+            <input type="range" min="1" max="10" step="1" @bind="user.Rating" class="form-range" />
+            <span>@user.Rating</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</EditForm>
+
+@if (success)
+{
+    <p class="text-success">Data submitted successfully!</p>
+    <p><a href="/userlist" class="btn btn-primary">View All Users</a></p>
+}
+
+<style>
+       .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .form-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .form-control,
+    .form-range {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .radio-container, 
+    .checkbox-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .text-success {
+        color: #28a745;
+        font-weight: bold;
+        margin-top: 15px;
+        text-align: center;
+    }
+</style>
+
+@code {
+    private UserDetails user = new UserDetails();
+    private bool success = false;
+
+    [Parameter] public int? userId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (userId.HasValue)
+        {
+            user = await DbContext.UserDetails.FirstOrDefaultAsync(u => u.Id == userId.Value);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (user.Id == 0)
+        {
+            DbContext.UserDetails.Add(user); // New user
+        }
+        else
+        {
+            DbContext.UserDetails.Update(user); // Edit existing user
+        }
+
+        await DbContext.SaveChangesAsync();
+
+        success = true;
+
+        // Optionally redirect to the user list page
+        Navigation.NavigateTo("/userlist");
+    }
+    public enum PreferredTime
+    {
+        Morning,
+        Afternoon,
+        Evening
+    }
+
+    public enum Gender
+    {
+        Male,
+        Female,
+        Other
+    }
+
+}

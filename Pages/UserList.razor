@@ -1,0 +1,75 @@
+@page "/userlist"
+@using Form.Models
+@using Microsoft.EntityFrameworkCore
+@inject Form.Data.ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+<div class="header-container">
+<h3>Existing Users</h3>
+<button class="btn btn-secondary"><a href="/userform" class="text-decoration-none text-white">Back</a></button>
+</div>
+
+<!-- Display Users Table -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Country</th>
+            <th>Options</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in users)
+        {
+            <tr>
+                <td>@u.FullName</td>
+                <td>@u.Age</td>
+                <td>@u.Gender</td>
+                <td>@u.Country</td>
+                <td>@u.WantsStereo, @u.IsSubscribed</td>
+                <td>
+                    <button class="btn btn-warning" @onclick="() => EditUser(u.Id)">Edit</button>
+                    <button class="btn btn-danger" @onclick="() => DeleteUser(u)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Link to go back to the User Form page -->
+<p><a href="/userform" class="btn btn-primary">Go to User Form</a></p>
+
+@code {
+    private List<UserDetails> users = new List<UserDetails>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load users from the database
+        users = await DbContext.UserDetails.ToListAsync();
+    }
+
+    private void EditUser(int userId)
+    {
+        // Redirect to the user form with the selected user's ID
+        Navigation.NavigateTo($"/userform/{userId}");
+    }
+
+    private async Task DeleteUser(UserDetails selectedUser)
+    {
+        DbContext.UserDetails.Remove(selectedUser);
+        await DbContext.SaveChangesAsync();
+
+        // Refresh the user list after deletion
+        users = await DbContext.UserDetails.ToListAsync();
+    }
+}
+<style>
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+</style>
